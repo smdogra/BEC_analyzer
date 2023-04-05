@@ -1,7 +1,4 @@
-# BEC_analyzer
-Analyzer for BEC
-
-Instructions how to run 
+#Instructionsfor  Bose-Einstein Correlation Analyzer
 
 cmsrel CMSSW_12_5_0
 
