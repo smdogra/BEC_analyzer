@@ -1,4 +1,4 @@
-#Instructionsfor  Bose-Einstein Correlation Analyzer
+Instructionsfor Bose-Einstein Correlation Analyzer
 
 cmsrel CMSSW_12_5_0
 
