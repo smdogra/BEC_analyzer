@@ -175,7 +175,7 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
   // Start loop over events
   double nev = (double)nevents;
   
-  for(int i = 0; i <10; i++){
+  for(int i = 0; i <100; i++){
     hlt_tree->GetEntry(i);
 
     if(i != 0 && (i % 10000) == 0){double alpha = (double)i; cout << " Running -> percentage: " << std::setprecision(3) << ((alpha / nev) * 100) << "%" << endl;}
@@ -395,18 +395,22 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
 	}
       }
     } // End of Loop for tracks
+    ev_ntrkoff_vec.push_back(mult);
+    ev_GoodTrackFourVector_vec.push_back(GoodTrackFourVector); 
+    ev_GoodTrackCharge_vec.push_back(GoodTrackCharge);
+    ev_vtx_z_vec.push_back(vertexz);
   } // End loop over events
 
   //--------------------------------------------------------------------------------------------------
-  int ntrkoff_min = 0;
-  int ntrkoff_max = 2;
-  int nEvt_to_mix = 3;
+  int ntrkoff_min = 0; ///just example will need to define several ranges and number of events to mix after
+  int ntrkoff_max = 400;
+  int nEvt_to_mix = 10;
   
   if(isEventMix==1){
     cout<< " I am starting the mixing " << endl;
     //call_mix_random(N_ev_mix, Mult_or_Cent_range, multvec_reco_reco, multiplicity_centrality_bins, vzvec_reco_reco, DVz_range);
     //call_mix_eta(N_ev_mix, Mult_or_Cent_range, multvec_reco_reco, multiplicity_centrality_bins, vzvec_reco_reco, DVz_range);
-    call_mix_random(N_ev_mix, ntrkoff_min, ntrkoff_max, nEvt_to_mix, ev_ntrkoff_vec, multiplicity_centrality_bins, vzvec_reco_reco, DVz_range, ev_GoodTrackFourVector_vec, ev_GoodTrackCharge_vec);
+    call_mix_random(ntrkoff_min, ntrkoff_max, nEvt_to_mix, ev_ntrkoff_vec, ev_vtx_z_vec, ev_GoodTrackFourVector_vec, ev_GoodTrackCharge_vec);
   }
   
   //---------------------------------------------------------------------------------------------------  
