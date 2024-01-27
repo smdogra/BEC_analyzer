@@ -98,7 +98,7 @@ THnSparseD *hist_gen_trk = new THnSparseD("hist_gen_trk", "hist_gen_trk", 4, bin
 THnSparseD *hist_gen_trk_weighted = new THnSparseD("hist_gen_trk_weighted", "hist_gen_trk_weighted", 4, bins4D_trk, xmin4D_trk, xmax4D_trk);
 
 
-
+/*
 bool splitcomb(TLorentzVector &vec1,TLorentzVector &vec2){
   bool issplit=false;
   Double_t cosa = TMath::Abs(vec1.Px()*vec2.Px() + vec1.Py()*vec2.Py() + vec1.Pz()*vec2.Pz())/(vec1.P()*vec2.P());
@@ -129,13 +129,6 @@ Double_t GetQlongLCMS(const TLorentzVector &p1, const TLorentzVector &p2){
 }
 
 Double_t GetQout(const TLorentzVector &p1, const TLorentzVector &p2){
-  /*Double_t kT_norm = TMath::Hypot((p1.Px()+p2.Px())/2.0,(p1.Py()+p2.Py())/2.0);                                                
-   Double_t qT_dot_kT = (p1.Px()-p2.Px())*((p1.Px()+p2.Px())/2) + (p1.Py()-p2.Py())*((p1.Py()+p2.Py())/2);                        
-                                                                                                                                  
-   Double_t qout = 0.0;                                                                                                           
-   if(kT_norm != 0) qout = qT_dot_kT/kT_norm;                                                                                     
-   return qout;                                                                                                                   
-  */
   TVector3 qT;
   qT.SetXYZ(p1.Px()-p2.Px(),p1.Py()-p2.Py(),0.0);
   TVector3 kT;
@@ -152,25 +145,6 @@ Double_t GetQout(const TLorentzVector &p1, const TLorentzVector &p2){
 }
 
 Double_t GetQside(const TLorentzVector &p1, const TLorentzVector &p2){
-
-  /*Double_t qT_x = p1.Px()-p2.Px();                                                                                             
-   Double_t qT_y = p1.Py()-p2.Py();                                                                                               
-                                                                                                                                  
-   Double_t kT_norm = TMath::Hypot((p1.Px()+p2.Px())/2.0,(p1.Py()+p2.Py())/2.0);                                                  
-   Double_t qT_dot_kT = (p1.Px()-p2.Px())*((p1.Px()+p2.Px())/2) + (p1.Py()-p2.Py())*((p1.Py()+p2.Py())/2);                        
-   Double_t kT_norm_x = ((p1.Px()+p2.Px())/2.0)/kT_norm;                                                                          
-   Double_t qOut_x = (qT_dot_kT*kT_norm_x)/kT_norm;                                                                               
-   Double_t kT_norm_y = ((p1.Py()+p2.Py())/2.0)/kT_norm;                                                                          
-   Double_t qOut_y = (qT_dot_kT*kT_norm_y)/kT_norm;                                                                               
-                                                                                                                                  
-   Double_t qSide_x = qT_x - qOut_x;                                                                                              
-   Double_t qSide_y = qT_y - qOut_y;                                                                                              
-   Double_t qSide = TMath::Hypot(qSide_x,qSide_y);                                                                                
-                                                                                                                                  
-   if (qSide_y<0)qSide=-1.*qSide;                                                                                                 
-                                                                                                                                  
-   return qSide;                                                                                                                  
-  */
 
   TVector3 qT;
   qT.SetXYZ(p1.Px()-p2.Px(),p1.Py()-p2.Py(),0.0);
@@ -228,41 +202,10 @@ const  Double_t CoulombWpm(const Double_t& q){
   //Double_t weight = 0.85; //for syst. -15%                                                                                    
   return weight*( (1.-TMath::Exp(-x))/x -1 ) + 1;
 }
-
-
-
-
-
-/*
-double getTrkCorrWeight(double pT, double eta){
-
-  double eff = reff2D->GetBinContent(
-				     reff2D->GetXaxis()->FindBin(eta),
-				     reff2D->GetYaxis()->FindBin(pT) );
-  if(eff >= 0.9999 || eff <= 0.0001) eff = 1;
-
-  double sec = rsec2D->GetBinContent(
-				     rsec2D->GetXaxis()->FindBin(eta),
-				     rsec2D->GetYaxis()->FindBin(pT));
-  if( sec >= 0.9999 || sec <= 0.0001) sec = 0;
-
-  double fak = rfak2D->GetBinContent(
-				     rfak2D->GetXaxis()->FindBin(eta),
-				     rfak2D->GetYaxis()->FindBin(pT));
-  if( fak >= 0.9999 || fak <= 0.0001) fak = 0;
-
-  double mul = rmul2D->GetBinContent(
-				     rmul2D->GetXaxis()->FindBin(eta),
-				     rmul2D->GetYaxis()->FindBin(pT));
-  if( mul >= 0.9999 || mul <= 0.0001) mul = 0;
-
-
-  return (1. - fak ) * ( 1. - sec ) / eff  / (1. + mul );
-  //return (1. - fak ) / eff;                                                                                                     
-  //return 1. / eff;                                                                                                              
-
-}
 */
+
+
+
 
 
 

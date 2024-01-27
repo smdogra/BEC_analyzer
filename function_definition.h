@@ -252,3 +252,217 @@ multvec: vector to be used in the mixing with event multiplicity or centrality i
 vzvec: vector to be used in the mixing with event Z vertex position information
 weightvec: vector to be used in the mixing with event weight information
 */
+
+
+
+
+
+
+bool splitcomb(TLorentzVector &vec1,TLorentzVector &vec2){
+  bool issplit=false;
+  Double_t cosa = TMath::Abs(vec1.Px()*vec2.Px() + vec1.Py()*vec2.Py() + vec1.Pz()*vec2.Pz())/(vec1.P()*vec2.P());
+  Double_t deltapt = TMath::Abs(vec1.Pt() - vec2.Pt());
+  if ( (cosa >cos_cut) && (deltapt < dpt_cut)) { issplit = true;}
+  //std::cout << "cosa: " << cosa << " dpt: " << deltapt << " is split: " << issplit << std::endl;                               
+  return issplit;
+}
+
+Double_t GetQ(const TLorentzVector &p1, const TLorentzVector &p2){
+  TLorentzVector Sum4V = p1+p2;
+  Double_t q = Sum4V.Mag2() - 4*pi_mass*pi_mass;
+  //  std::cout<<(  q>0 ?  TMath::Sqrt(q) : -TMath::Sqrt(-q)  ) <<std::endl;                                                     
+  return (  q>0 ?  TMath::Sqrt(q) : -TMath::Sqrt(-q)  );
+}
+Double_t GetQlong(const TLorentzVector &p1, const TLorentzVector &p2){
+  TLorentzVector Diff4V = p1-p2;
+  Double_t qlong = fabs(Diff4V.Pz());
+  return qlong;
+}
+
+Double_t GetQlongLCMS(const TLorentzVector &p1, const TLorentzVector &p2){
+  Double_t num = 2*( (p1.Pz())*(p2.E()) - (p2.Pz())*(p1.E()) );
+  Double_t den = TMath::Sqrt( (p1.E()+p2.E())*(p1.E()+p2.E()) - (p1.Pz()+p2.Pz())*(p1.Pz()+p2.Pz()) );
+  Double_t qlongLCMS = 0.0;
+  if(den != 0) qlongLCMS = fabs(num/den);
+  return qlongLCMS;
+}
+
+Double_t GetQout(const TLorentzVector &p1, const TLorentzVector &p2){
+  /*Double_t kT_norm = TMath::Hypot((p1.Px()+p2.Px())/2.0,(p1.Py()+p2.Py())/2.0);                                                
+   Double_t qT_dot_kT = (p1.Px()-p2.Px())*((p1.Px()+p2.Px())/2) + (p1.Py()-p2.Py())*((p1.Py()+p2.Py())/2);                        
+                                                                                                                                  
+   Double_t qout = 0.0;                                                                                                           
+   if(kT_norm != 0) qout = qT_dot_kT/kT_norm;                                                                                     
+   return qout;                                                                                                                   
+  */
+  TVector3 qT;
+  qT.SetXYZ(p1.Px()-p2.Px(),p1.Py()-p2.Py(),0.0);
+  TVector3 kT;
+  kT.SetXYZ( (p1.Px()+p2.Px())/2.0 , (p1.Py()+p2.Py())/2.0 ,0.0);
+  TVector3 qout;
+  qout = qT.Dot(kT.Unit())*kT.Unit();
+
+  Double_t absValue = qout.Mag();
+  ///if (qT.Dot(kT.Unit()) < 0)signed_absValue=-1.*qout.Mag();                                                                   
+
+  return absValue;
+
+
+}
+
+Double_t GetQside(const TLorentzVector &p1, const TLorentzVector &p2){
+
+  /*Double_t qT_x = p1.Px()-p2.Px();                                                                                             
+   Double_t qT_y = p1.Py()-p2.Py();                                                                                               
+                                                                                                                                  
+   Double_t kT_norm = TMath::Hypot((p1.Px()+p2.Px())/2.0,(p1.Py()+p2.Py())/2.0);                                                  
+   Double_t qT_dot_kT = (p1.Px()-p2.Px())*((p1.Px()+p2.Px())/2) + (p1.Py()-p2.Py())*((p1.Py()+p2.Py())/2);                        
+   Double_t kT_norm_x = ((p1.Px()+p2.Px())/2.0)/kT_norm;                                                                          
+   Double_t qOut_x = (qT_dot_kT*kT_norm_x)/kT_norm;                                                                               
+   Double_t kT_norm_y = ((p1.Py()+p2.Py())/2.0)/kT_norm;                                                                          
+   Double_t qOut_y = (qT_dot_kT*kT_norm_y)/kT_norm;                                                                               
+                                                                                                                                  
+   Double_t qSide_x = qT_x - qOut_x;                                                                                              
+   Double_t qSide_y = qT_y - qOut_y;                                                                                              
+   Double_t qSide = TMath::Hypot(qSide_x,qSide_y);                                                                                
+                                                                                                                                  
+   if (qSide_y<0)qSide=-1.*qSide;                                                                                                 
+                                                                                                                                  
+   return qSide;                                                                                                                  
+  */
+
+  TVector3 qT;
+  qT.SetXYZ(p1.Px()-p2.Px(),p1.Py()-p2.Py(),0.0);
+  TVector3 kT;
+  kT.SetXYZ( (p1.Px()+p2.Px())/2.0 , (p1.Py()+p2.Py())/2.0 ,0.0);
+  TVector3 qout;
+  qout = qT.Dot(kT.Unit())*kT.Unit();
+  TVector3 qsid;
+  qsid = qT - qout;
+
+  Double_t absValue = qsid.Mag();
+
+  return absValue;
+
+}
+                                   
+
+const TLorentzVector InvertPVector( TLorentzVector &vec){
+  TLorentzVector ovec = vec;
+  ovec.SetPx(-vec.Px());
+  ovec.SetPy(-vec.Py());
+  ovec.SetPz(-vec.Pz());
+  return ovec;
+}
+
+const TLorentzVector InvertXYVector( TLorentzVector &vec){
+  TLorentzVector ovec = vec;
+  ovec.SetX(-vec.X());
+  ovec.SetY(-vec.Y());
+  return ovec;
+}
+
+//return the weight factor due to Coloumb repulsion [Gamow] same charge                                                         
+const Double_t CoulombW(const Double_t& q){
+  const Double_t alpha=1./137.;
+  Double_t x=2*TMath::Pi()*(alpha*pi_mass/q);
+  //return (TMath::Exp(x)-1.)/x; // OLD MATTIA's DEFINITION                                                                     
+
+  //Double_t ws=scf*((exp(arg)-1)/arg-1)+1; // PAOLO's DEFINITION                                                               
+  Double_t weight = 1;//0.85; // TEMPORARY SET TO 0.85 * GAMOW FACTOR                                                           
+  //Double_t weight = 1.15; //for syst. +15%                                                                                    
+  //Double_t weight = 0.85; //for syst. -15%                                                                                    
+  return weight*( (TMath::Exp(x)-1.)/x -1 ) + 1;
+ }
+
+//return the weight factor due to Coloumb attraction [Gamow] opposite charge                                                    
+const  Double_t CoulombWpm(const Double_t& q){
+  const Double_t alpha=1./137.;
+  Double_t x=2*TMath::Pi()*(alpha*pi_mass/q);
+  // return (1.-TMath::Exp(-x))/x; // OLD MATTIA's DEFINITION                                                                   
+
+  // Double_t wd=scf*((1-exp(-arg))/arg-1)+1; // PAOLO's DEFINITION                                                             
+  Double_t weight = 1;//0.85; // TEMPORARY SET TO 0.85 * GAMOW FACTOR                                                           
+  //Double_t weight = 1.15; //for syst. +15%                                                                                    
+  //Double_t weight = 0.85; //for syst. -15%                                                                                    
+  return weight*( (1.-TMath::Exp(-x))/x -1 ) + 1;
+}
+
+/*
+double getTrkCorrWeight(double pT, double eta){
+
+  double eff = reff2D->GetBinContent(
+				     reff2D->GetXaxis()->FindBin(eta),
+				     reff2D->GetYaxis()->FindBin(pT) );
+  if(eff >= 0.9999 || eff <= 0.0001) eff = 1;
+
+  double sec = rsec2D->GetBinContent(
+				     rsec2D->GetXaxis()->FindBin(eta),
+				     rsec2D->GetYaxis()->FindBin(pT));
+  if( sec >= 0.9999 || sec <= 0.0001) sec = 0;
+
+  double fak = rfak2D->GetBinContent(
+				     rfak2D->GetXaxis()->FindBin(eta),
+				     rfak2D->GetYaxis()->FindBin(pT));
+  if( fak >= 0.9999 || fak <= 0.0001) fak = 0;
+
+  double mul = rmul2D->GetBinContent(
+				     rmul2D->GetXaxis()->FindBin(eta),
+				     rmul2D->GetYaxis()->FindBin(pT));
+  if( mul >= 0.9999 || mul <= 0.0001) mul = 0;
+
+
+  return (1. - fak ) * ( 1. - sec ) / eff  / (1. + mul );
+  //return (1. - fak ) / eff;                                                                                                     
+  //return 1. / eff;                                                                                                              
+
+}
+*/
+
+Double_t Encode( int w )
+{
+        //int Range[]={3,5,8,10,13,16,20,25,30,200} ;
+        int Range[]={3,5,8,10,13,16,20,25,30,200,10000} ;//added a protection for high-multiplicity 
+        int i(0), j(0) ;
+        while( w >= Range[i++] ) j++ ;
+        //henc->Fill(w, (Double_t) j) ;
+        return (Long64_t) j ;
+}
+
+Double_t ComputeEventWeight(std::vector<TLorentzVector> GoodTrackFourVector) // compute eta of event
+{
+        int nFwd(0), nBkw(0), nCtr(0) ;
+        for( unsigned int i=0 ; i< GoodTrackFourVector.size() ; i++ )
+    {
+                Double_t eta = GoodTrackFourVector[i].Eta() ;
+                if( eta < -0.8 )
+        { nBkw++ ;}
+                else if( eta > 0.8 )
+        { nFwd++ ;}
+                else
+        { nCtr++ ;}
+    }
+
+
+        Double_t ReturnValue = (100*Encode( nFwd ) + 10 * Encode( nCtr ) + Encode( nBkw )) ;
+        return ReturnValue ;
+}
+
+
+bool etaMixSort(std::pair<Double_t,std::vector<TLorentzVector>> & a, std::pair<Double_t,std::vector<TLorentzVector>> & b){
+
+   return a.first < b.first ? true : false ;
+
+}
+
+bool etaMixSort_ch(std::pair<Double_t,std::vector<int>> & a, std::pair<Double_t,std::vector<int>> & b){
+
+   return a.first < b.first ? true : false ;
+
+}
+
+bool etaMixSort_ntrkoff(std::pair<Double_t,int> & a, std::pair<Double_t,int> & b){
+
+   return a.first < b.first ? true : false ;
+
+}
