@@ -43,6 +43,7 @@ void MixEvents_random(int ntrkoff_min, int ntrkoff_max, int nEvt_to_mix, std::ve
     int takeAssociated = 0;
     for(int nevt_assoc=nevt1+1; nevt_assoc<aux_n_evts; nevt_assoc++) {
       if(ev_ntrkoff_vec[nevt_assoc]<ntrkoff_min || ntrkoff_max<ev_ntrkoff_vec[nevt_assoc])continue;
+      if(std::abs((ev_vtx_z_vec)[nevt1] - (ev_vtx_z_vec)[nevt_assoc])>2.0) continue; //do not mix events far away 2cm in Z 
 
       std::vector<TLorentzVector> ev_GoodTrackFourVectorTemp_nevt_assoc_vec= ev_GoodTrackFourVector_vec[nevt_assoc];
       int nMixmult_nevt_assoc=ev_GoodTrackFourVectorTemp_nevt_assoc_vec.size();

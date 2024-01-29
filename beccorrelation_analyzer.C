@@ -5,7 +5,7 @@
 #include "uiclogo.h" // print UIC jets and start/stop time
 #include "function_definition.h"
 #include "random_mixing.h" // random mixing function  
-//#include "eta_mixing.h" // random mixing function  
+#include "eta_mixing.h" // eta mixing function  
 /*
 Main code to run Jet+Track correlation
 
@@ -45,12 +45,15 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
   const Double_t CoulombWpm( const Double_t& q);
   const TLorentzVector InvertXYVector( TLorentzVector &vec);
   const Double_t CoulombW( const Double_t& q);
+  Double_t Encode( int w );
+  Double_t ComputeEventWeight(std::vector<TLorentzVector> GoodTrackFourVector);
+  bool etaMixSort(std::pair<Double_t,std::vector<TLorentzVector>> & a, std::pair<Double_t,std::vector<TLorentzVector>> & b);
+  bool etaMixSort_ch(std::pair<Double_t,std::vector<int>> & a, std::pair<Double_t,std::vector<int>> & b);
+  bool etaMixSort_ntrkoff(std::pair<Double_t,int> & a, std::pair<Double_t,int> & b);
+
 
   // var defined for mixed events
 
-  Double_t ComputeEventWeight(std::vector<TLorentzVector> GoodTrackFourVector);
-  void MixEvents(int ntrkoff_min, int ntrkoff_max, int nEvt_to_mix);
-  void MixEvents_eta(int ntrkoff_min, int ntrkoff_max);
   int mix_procedure_; //which mixing procedure to use. If equal to 1 is random and 2 is eta mix 
   int Multiplicity_; //create histograms in bins of multiplicity according to the trigger.
 
@@ -64,6 +67,8 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
   std::vector<std::vector<int>> ev_GoodTrackCharge_vec;
   std::vector<int> ev_ntrkoff_vec;
   std::vector<std::pair<Double_t, std::vector<TLorentzVector>> > ev_GoodTrackFourVector_etaMixWeight_vec;
+  std::vector<std::pair<Double_t, std::vector<int>> > ev_GoodTrackCharge_etaMixWeight_vec;
+  std::vector<std::pair<Double_t,int> > ev_ntrkoff_etaMixWeight_vec;
 
 
   //---------------------------------------------------------------------------------------------
@@ -184,7 +189,15 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
     
     Nevents->Fill(0); // filled after each event cut
     // Apply event filters
-    for(int ii = 0; ii < event_filter_bool.size(); ii++) if(event_filter_bool[ii] != 1) continue;
+    //for(int ii = 0; ii < event_filter_bool.size(); ii++) if(event_filter_bool[ii] != 1) continue;
+    bool passFilters=true;
+    for(int ii = 0; ii < event_filter_bool.size(); ii++){
+       if(event_filter_bool[ii] == 0){
+         passFilters=false;
+         break;
+       }	 
+    }
+    if(!passFilters) continue;
     Nevents->Fill(1);
   
 
@@ -218,7 +231,7 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
     if(use_centrality){mult = hiBin;}else{mult = get_Ntrkoff(colliding_system, sNN_energy_GeV, year_of_datataking, trksize, trketa, trkpt, trkcharge, highpur, trkpterr, trkdcaxy, trkdcaxyerr, trkdcaz, trkdcazerr, trkchi2, trkndof, trknlayer, trknhits, trkalgo, trkmva);}
     if(mult < multiplicity_centrality_bins[0] || mult > multiplicity_centrality_bins[multiplicity_centrality_bins.size()-1])continue; //centrality of multiplicity range	
     int multcentbin = (int) find_my_bin(multiplicity_centrality_bins, (float) mult);
-    Nevents->Fill(4);
+    Nevents->Fill(3);
 
     // event weight(s), this must be applied in all histograms
     //    double event_weight = get_event_weight(is_MC, use_centrality, colliding_system.Data(), year_of_datataking, sNN_energy_GeV, vertexz, mult, weight, pthat); // get the event weight
@@ -238,6 +251,14 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
       float trk_eta = trketa[j];
       float trk_phi = trkphi[j];
       float trk_charge=  trkcharge[j];
+
+      //for eta-mixing
+      if(trk_pt>0.4 && fabs(trk_eta)<2.4 && fabs(trkpterr[j]/trkpt[j])<0.1 && fabs(trkdcaxy[j]/trkdcaxyerr[j])<3 && fabs(trkdcaz[j]/trkdcazerr[j])<3 && highpur[j] ==true){
+         TLorentzVector pvector_etamix;
+	 pvector_etamix.SetPtEtaPhiM(trk_pt,trk_eta, trk_phi,pi_mass);
+         GoodTrackFourVector_trkoff.push_back(pvector_etamix); 	      
+      }
+
       // In pPb case, for the center-of-mass correction if needed
       if(colliding_system=="pPb" && do_CM_pPb){if(is_pgoing){trk_eta = trk_eta - 0.465;}else{trk_eta = -trk_eta - 0.465;}}
       
@@ -291,6 +312,7 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
       pvector.SetPtEtaPhiM(trk_pt,trk_eta, trk_phi,pi_mass);
       GoodTrackFourVector.push_back(pvector);
       GoodTrackCharge.push_back(trk_charge);
+
     } // End loop over tracks
    
 
@@ -356,11 +378,12 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
 	Double_t aux_tk2_corr = 1.0;
 	Double_t aux_tk12_corr=aux_tk1_corr*aux_tk2_corr;
 
+	//Cesar: why only for qinv<0.01GeV? 
 	if (GoodTrackCharge[itk1]==1 && GoodTrackCharge[itk2]==1   && q < 0.01)hist_dpt_cos_pp->Fill(costheta,deltapt1);
 	if (GoodTrackCharge[itk1]==-1 && GoodTrackCharge[itk2]==-1 && q < 0.01)hist_dpt_cos_mm->Fill(costheta,deltapt1);
 
 	if(GoodTrackCharge[itk1]*GoodTrackCharge[itk2]>0){
-	  if(q < 0.01)hist_deetadphi->Fill(d_eta, d_phi);
+	  if(q < 0.01)hist_deetadphi->Fill(d_eta, d_phi); //Cesar: why only for qinv<0.01GeV?
 	  hist_tk_pairSS_M_->Fill(psum2.M(),aux_tk12_corr);
 	  
 	  hist_sig_KtVsNch_ntrkoff->Fill(kt,mult,aux_tk12_corr);
@@ -399,6 +422,19 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
     ev_GoodTrackFourVector_vec.push_back(GoodTrackFourVector); 
     ev_GoodTrackCharge_vec.push_back(GoodTrackCharge);
     ev_vtx_z_vec.push_back(vertexz);
+    ///for eta-mixing
+    //build vector of pairs ordered by the etaMixWeight
+    Double_t aux_etaMix_w = ComputeEventWeight(GoodTrackFourVector_trkoff);
+    std::cout<<"aux_etaMix_w : "<<aux_etaMix_w<<std::endl;
+    std::pair<Double_t, std::vector<TLorentzVector>> aux_pair_GoodTrackFourVector_etaMixWeight = make_pair(aux_etaMix_w, GoodTrackFourVector);
+    ev_GoodTrackFourVector_etaMixWeight_vec.push_back(aux_pair_GoodTrackFourVector_etaMixWeight);
+    std::pair<Double_t, std::vector<int>> aux_pair_GoodTrackCharge_etaMixWeight = make_pair(aux_etaMix_w,GoodTrackCharge);
+    ev_GoodTrackCharge_etaMixWeight_vec.push_back(aux_pair_GoodTrackCharge_etaMixWeight);
+    std::pair<Double_t,int> aux_pair_ntrkoff_etaMixWeight = make_pair(aux_etaMix_w,mult);//IMPORTANT: (Cesar) if you are doing analysis in terms of centrality, is very important you revise this.
+    ev_ntrkoff_etaMixWeight_vec.push_back(aux_pair_ntrkoff_etaMixWeight);
+
+
+
   } // End loop over events
 
   //--------------------------------------------------------------------------------------------------
@@ -406,12 +442,17 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
   int ntrkoff_max = 400;
   int nEvt_to_mix = 10;
   
-  if(isEventMix==1){
-    cout<< " I am starting the mixing " << endl;
-    //call_mix_random(N_ev_mix, Mult_or_Cent_range, multvec_reco_reco, multiplicity_centrality_bins, vzvec_reco_reco, DVz_range);
-    //call_mix_eta(N_ev_mix, Mult_or_Cent_range, multvec_reco_reco, multiplicity_centrality_bins, vzvec_reco_reco, DVz_range);
+  int MixingID=2;//Cesar: should implement when calling the function ...just temporary here
+  if(isEventMix==1 && MixingID==1){
+    cout<< " I am starting the random mixing " << endl;
     call_mix_random(ntrkoff_min, ntrkoff_max, nEvt_to_mix, ev_ntrkoff_vec, ev_vtx_z_vec, ev_GoodTrackFourVector_vec, ev_GoodTrackCharge_vec);
   }
+
+  if(isEventMix==1 && MixingID==2){
+    cout<< " I am starting the eta mixing " << endl;	  
+    call_mix_eta(ntrkoff_min, ntrkoff_max, ev_GoodTrackFourVector_etaMixWeight_vec, ev_GoodTrackCharge_etaMixWeight_vec, ev_ntrkoff_etaMixWeight_vec);  
+
+  } 	  
   
   //---------------------------------------------------------------------------------------------------  
   
