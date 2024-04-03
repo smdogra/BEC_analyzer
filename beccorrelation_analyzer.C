@@ -8,9 +8,7 @@
 #include "eta_mixing.h" // eta mixing function  
 /*
 Main code to run Jet+Track correlation
-
 Written by Dener Lemos (dener.lemos@cern.ch)
-
 --> Arguments
 input_file: text file with a list of root input files: Forest or Skims
 ouputfilename: just a text to run on Condor
@@ -88,13 +86,11 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
   //  if(!do_pid) particles = "CH";
   // In case of wrong input, printout error message and kill the job
   if(year_of_datataking!=2012 && year_of_datataking!=2016 && year_of_datataking!=2017 && year_of_datataking!=2018){cout << "Data and MC not supported: choose 2012 for pp at 8 TeV, 2016 for pPb at 8.16 TeV, 2017 for pp at 5.02 TeV or XeXe at 5.44 TeV and 2018 for PbPb at 5.02 TeV" << endl; return;}
-  if(colliding_system!="pp" && colliding_system!="pPb" && colliding_system!="XeXe" && colliding_system!="PbPb"){cout << "Data and MC not supported: choose pp for proton-proton, pPb for proton-lead, PbPb for lead-lead and XeXe for xenon-xenon" << endl; return;}
+  if(colliding_system!="pp" && colliding_system!="pPb" && colliding_system!="XeXe" && colliding_system!="PbPb"){cout << "Data and MC not supported: choose pp for proton-proton, pPb for proton-lead, PbPb for lead-lead and XeXe for Xenon-Xenon" << endl; return;}
   if(sNN_energy_GeV!=5020 && sNN_energy_GeV!=5440 && sNN_energy_GeV!=8000 && sNN_energy_GeV!=8160 && sNN_energy_GeV!=13000){cout << "Data and MC not supported: 5020 for pp 2017 or PbPb 2018, 5440 for XeXe, 8000 for pp 2018, 8160 for pPb 2016" << endl; return;}
 
 
   //----------------------------------------------------------------------------------------------
-
-
   // Track or particle efficiency file
   TFile *fileeff = TFile::Open(Form("aux_files/%s_%i/trk_eff_table/%s",colliding_system.Data(),sNN_energy_GeV,trk_eff_file.Data()));
   cout << endl;
@@ -108,8 +104,8 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
   vector<TH3*> eff_histos3D={reff3D, rfak3D, rsec3D, rmul3D};
 
   //-----------------------------------------------------------------------------------------------
-  // Print the input in the screen/log 
-  //  print_input(data_or_mc,fileeff,colliding_system,pthatmin,pthatmax);
+  //Print the input in the screen/log 
+  //print_input(data_or_mc,fileeff,colliding_system,pthatmin,pthatmax);
   print_input(data_or_mc,fileeff,colliding_system);
   cout << endl;
   
@@ -120,7 +116,6 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
   if(!inputfile.is_open()){cout << "List of input files not founded!" << endl; return;}{cout << "List of input files founded! --> " << input_file.Data() << endl;}
 
   //-------------------------------------------------------------------------------------------------
-  
   // Make a chain and a vector of file names
   std::vector<TString> file_name_vector;
   string file_chain;
@@ -128,8 +123,6 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
   inputfile.close();
   
   //--------------------------------------------------------------------------------------------------
-
-
   // Read the trees to be added in the Chain
   TChain *hlt_tree = new TChain("hltanalysis/HltTree");
   TChain *trk_tree = new TChain("ppTrack/trackTree");
@@ -139,8 +132,6 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
   TChain *ski_tree = new TChain("skimanalysis/HltTree");
   
   //-----------------------------------------------------------------------------------------------------
-
-
   // add all the trees to the chain
   for (std::vector<TString>::iterator listIterator = file_name_vector.begin(); listIterator != file_name_vector.end(); listIterator++){
     cout << "Adding file " << *listIterator << " to the chains" << endl;
@@ -152,8 +143,6 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
   }
 
   //-------------------------------------------------------------------------------------------------------
-
-  
   // Connect all chains
   hlt_tree->AddFriend(trk_tree);
   hlt_tree->AddFriend(hea_tree);
@@ -161,17 +150,12 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
   if(is_MC){hlt_tree->AddFriend(gen_tree);}
 
   //--------------------------------------------------------------------------------------------------------
-
-  
   // Read the desired branchs in the trees
   read_tree(hlt_tree, is_MC, colliding_system.Data(), sNN_energy_GeV, year_of_datataking, event_filter_str, event_filter_bool); // access the tree informations
-  
   // Use sumw2() to make sure about histogram uncertainties in ROOT
   sw2(); 
 
   //**********************************************************************************************************/
-  
-
   int nevents = hlt_tree->GetEntries(); // number of events
   cout << "Total number of events in those files: "<< nevents << endl;
   cout << endl;
@@ -179,14 +163,10 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
   
   // Start loop over events
   double nev = (double)nevents;
-  
-  for(int i = 0; i <100; i++){
+  nev =1000;
+  for(int i = 0; i <nev; i++){
     hlt_tree->GetEntry(i);
-
     if(i != 0 && (i % 10000) == 0){double alpha = (double)i; cout << " Running -> percentage: " << std::setprecision(3) << ((alpha / nev) * 100) << "%" << endl;}
-    
-    //if(i != 0 && i % 20000 == 0 ) break; // just for tests
-    
     Nevents->Fill(0); // filled after each event cut
     // Apply event filters
     //for(int ii = 0; ii < event_filter_bool.size(); ii++) if(event_filter_bool[ii] != 1) continue;
@@ -282,7 +262,8 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
       // Track efficiency correction
       double trk_weight = 1.0;
       trk_weight = trk_weight*getTrkCorrWeight(eff_histos[0], eff_histos[1], eff_histos[2], eff_histos[3], trk_pt, trk_eta);
-      //      cout<< " The weight of the tracks   "  <<trk_weight << endl;
+
+      //cout<< " The weight of the tracks   :   "  <<trk_eta << " " << trk_pt << " " <<  trk_weight << endl;
       
       // Track QA histogram filling
       double x4D_reco_trk[4]={trk_pt,trk_eta,trk_phi,(double) multcentbin}; 
@@ -315,7 +296,6 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
 
     } // End loop over tracks
    
-
     //if(Multiplicity_ == 0){if(120<=mult){return;}}                                          
     //if(Multiplicity_ == 0){if(800<mult){return;}} //for extended MinBias                      
     //else if(Multiplicity_ == 1){if(120>mult || 150<=mult){return;}}
@@ -329,11 +309,13 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
     if(GoodTrackFourVector.size()<2)continue; //event not used for signal, then do not use for mixing 
     //cout<<" Size of the tracks +++++++    " <<GoodTrackFourVector.size() << " "<< mult <<  endl;
     for(unsigned int itk1=0; itk1<GoodTrackFourVector.size();itk1++){
-      Double_t aux_tk1_corr = 1.0;
+      //Double_t aux_tk1_corr = 1.0; // No track corrections
+      Double_t aux_tk1_corr = (Double_t)getTrkCorrWeight(eff_histos[0], eff_histos[1], eff_histos[2], eff_histos[3],GoodTrackFourVector[itk1].Pt(),GoodTrackFourVector[itk1].Eta());
       Double_t aux_pt = GoodTrackFourVector[itk1].Pt();
       Double_t aux_eta = GoodTrackFourVector[itk1].Eta();
       Double_t aux_phi = GoodTrackFourVector[itk1].Phi();
-
+      if(aux_pt<0.4)cout<< " The weight of the tracks   :   "  <<aux_eta << " " << aux_pt << " " <<  aux_tk1_corr << endl;
+      
       hist_ptVsNch_ntrkoff->Fill(aux_pt,mult,   aux_tk1_corr);
       hist_etaVsNch_ntrkoff->Fill(aux_eta,mult, aux_tk1_corr);
       hist_phiVsNch_ntrkoff->Fill(aux_phi,mult, aux_tk1_corr);
@@ -375,7 +357,8 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
 	Double_t x3D_inv[3]={qo,kt_inv,(Double_t)mult};
 
 
-	Double_t aux_tk2_corr = 1.0;
+	//Double_t aux_tk2_corr = 1.0; // No track corrections
+	Double_t aux_tk2_corr = (Double_t)getTrkCorrWeight(eff_histos[0], eff_histos[1], eff_histos[2], eff_histos[3], GoodTrackFourVector[itk2].Pt(),GoodTrackFourVector[itk2].Eta()); 
 	Double_t aux_tk12_corr=aux_tk1_corr*aux_tk2_corr;
 
 	//Cesar: why only for qinv<0.01GeV? 
@@ -425,7 +408,7 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
     ///for eta-mixing
     //build vector of pairs ordered by the etaMixWeight
     Double_t aux_etaMix_w = ComputeEventWeight(GoodTrackFourVector_trkoff);
-    std::cout<<"aux_etaMix_w : "<<aux_etaMix_w<<std::endl;
+    //    std::cout<<"aux_etaMix_w : "<<aux_etaMix_w<<std::endl;
     std::pair<Double_t, std::vector<TLorentzVector>> aux_pair_GoodTrackFourVector_etaMixWeight = make_pair(aux_etaMix_w, GoodTrackFourVector);
     ev_GoodTrackFourVector_etaMixWeight_vec.push_back(aux_pair_GoodTrackFourVector_etaMixWeight);
     std::pair<Double_t, std::vector<int>> aux_pair_GoodTrackCharge_etaMixWeight = make_pair(aux_etaMix_w,GoodTrackCharge);
@@ -433,11 +416,10 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
     std::pair<Double_t,int> aux_pair_ntrkoff_etaMixWeight = make_pair(aux_etaMix_w,mult);//IMPORTANT: (Cesar) if you are doing analysis in terms of centrality, is very important you revise this.
     ev_ntrkoff_etaMixWeight_vec.push_back(aux_pair_ntrkoff_etaMixWeight);
 
-
-
   } // End loop over events
 
   //--------------------------------------------------------------------------------------------------
+
   int ntrkoff_min = 0; ///just example will need to define several ranges and number of events to mix after
   int ntrkoff_max = 400;
   int nEvt_to_mix = 10;
@@ -450,12 +432,11 @@ void beccorrelation_analyzer(TString input_file, TString ouputfilename, int MCSi
 
   if(isEventMix==1 && MixingID==2){
     cout<< " I am starting the eta mixing " << endl;	  
-    call_mix_eta(ntrkoff_min, ntrkoff_max, ev_GoodTrackFourVector_etaMixWeight_vec, ev_GoodTrackCharge_etaMixWeight_vec, ev_ntrkoff_etaMixWeight_vec);  
-
+    call_mix_eta(ntrkoff_min, ntrkoff_max, ev_GoodTrackFourVector_etaMixWeight_vec, ev_GoodTrackCharge_etaMixWeight_vec, ev_ntrkoff_etaMixWeight_vec);
   } 	  
   
   //---------------------------------------------------------------------------------------------------  
-  
+
   cout <<  " " <<endl;
   cout << "Writing histograms on " << endl;
   cout << " " << endl;
